@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<!--
+Copyright 2017 by Pascal Stoop
+-->
+<html>
+  <head>
+      <title>Exercise 5</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" type="text/css" href="core/lib/semantic-ui/semantic.min.css">
+
+      <style> 
+        .aspect-container {
+          position: relative;
+          padding: 0 0 50% 0;
+          height: 0;
+          overflow: hidden;
+        }
+        #myCanvas {
+          width: 100%; 
+          height: 100%; 
+          position:absolute;
+          top:0;
+          left:0;
+        }
+        #link {
+          display: none;
+        }
+      </style>
+
+      <script src="core/lib/jquery-3.2.1.js"></script>
+      <script src="core/lib/semantic-ui/semantic.min.js"></script>
+
+      <script>
+        let refCanvas = undefined;
+        let ctx = null;
+        
+        const Commands = {
+          clearall: "clearall",
+          draw: "draw"
+        };
+        
+        function init() {
+          refCanvas = document.getElementById("myCanvas");
+          if (refCanvas.getContext) {
+            ctx = refCanvas.getContext('2d', {alpha: true});
+            resizeCanvas();
+          }
+          
+          window.addEventListener("resize", function() {
+            resizeCanvas();
+          });
+          
+          $("#myCanvas").on("mousedown", function (evt) {
+            var cPos = getPositionFromEvent(evt, refCanvas);
+            console.log("x:" + cPos.x + ", y:" + cPos.y);
+            paint(Commands.draw, cPos);
+          });
+          
+          $("#b-clearall").on("click", function(evt) {
+            paint(Commands.clearall, null);
+          });
+          
+          $("#b-screenshot").on("click", function(evt) {
+            if (refCanvas.msToBlob) { //for IE
+              var blob = refCanvas.msToBlob();
+              window.navigator.msSaveBlob(blob, 'canvas.png');
+            } else {
+              //other browsers
+              var link = document.getElementById('link');
+              link.setAttribute('download', 'canvas.png');
+              link.setAttribute('href', refCanvas.toDataURL("image/png").replace("image/png", "image/octet-stream"));
+              link.click();
+            }
+            
+          });
+          
+        }
+
+        function getPositionFromEvent(event, refCanvas) {
+          var result = { x: 0, y:0};
+
+          if (event.x != undefined && event.y != undefined) {
+            result.x = event.x;
+            result.y = event.y;
+          }
+          else {
+            result.x = event.clientX;
+            result.y = event.clientY;
+          }
+          
+          var elemInfos = refCanvas.getBoundingClientRect();
+
+          result.x -= parseInt(elemInfos.left);
+          result.y -= parseInt(elemInfos.top);
+
+          return result;
+        }
+
+        function resizeCanvas() {
+          let boxWidth = refCanvas.clientWidth;
+          let boxHeight = refCanvas.clientHeight;
+          refCanvas.width = boxWidth;
+          refCanvas.height = boxHeight;
+          paint(Commands.clearall, null);
+        }
+        
+        function paint(cmd, posData) {
+          if (ctx != null) {
+            if ((cmd == Commands.draw) && (posData != null)) {
+              ctx.save();
+              ctx.globalCompositeOperation = $("#i-compositeoperation").val();
+              ctx.globalAlpha = parseFloat($("#i-alphavalue").val());
+              
+              //set ctx styles
+              ctx.font = ("italic bold 24px TSTAR");
+              ctx.textAlign = ("center");
+              ctx.textBaseline = ("middle");
+              let textInput = $("#i-textstring").val();
+              // this method can only be used if the font, align and base is already set up!
+              let textWidth = ctx.measureText(textInput).width;
+
+              let gradient = ctx.createLinearGradient(0 - textWidth/2, 0, textWidth/2, 0);
+              gradient.addColorStop("0", "green");
+              gradient.addColorStop("0.5", "#" + $("#i-colorhex").val());
+              gradient.addColorStop("1.0", "blue");
+              
+              ctx.fillStyle = ctx.strokeStyle = gradient;
+              ctx.lineWidth = $("#i-strokewidth").val();
+              
+              //transform/rotate
+              let rotationDegree = $("#i-rotation").val();
+              ctx.translate(posData.x, posData.y);
+              ctx.rotate(rotationDegree * (Math.PI/180));
+
+              //draw text
+              if ($("#i-drawstyle").val() == "fill") {
+                //fill
+                ctx.fillText(textInput, 0, 0);
+              }
+              else {
+                //stroke
+                ctx.strokeText(textInput, 0, 0);
+              }
+              ctx.restore();
+            }
+            else {
+              ctx.clearRect(0, 0, refCanvas.width, refCanvas.height);
+            }
+          }
+        }
+        
+        $(function() {
+            init();
+        });
+      </script>
+  </head>
+  <body>
+    <div class="ui raised padded container segment">
+      <div class="ui segments">
+        <div class="ui segment">
+          <h3>Canvas - Exercise 5 (Text)</h3>
+        </div>
+        <div class="ui segment">
+          <button id="b-clearall" class="ui button">Clear All</button>
+          <div class="ui labeled input">
+            <div class="ui label">
+              Text
+            </div>
+            <input id="i-textstring" type="text" value="PalimPalim">
+          </div>
+          <select class="ui dropdown" id="i-rotation">
+            <option value="0">0 Grad</option>
+            <option value="10">10 Grad</option>
+            <option value="30" selected="selected">30 Grad</option>
+            <option value="45">45 Grad</option>
+            <option value="60">60 Grad</option>
+            <option value="90">90 Grad</option>
+            <option value="150">150 Grad</option>
+            <option value="180">180 Grad</option>
+            <option value="270">270 Grad</option>
+          </select>
+          
+          <select class="ui dropdown" id="i-drawstyle">
+            <option value="fill" selected="selected">fill</option>
+            <option value="stroke">stroke</option>
+          </select>
+          <select class="ui dropdown" id="i-strokewidth">
+            <option value="1">1px (stroke)</option>
+            <option value="2">2px (stroke)</option>
+            <option value="4" selected="selected">4px (stroke)</option>
+            <option value="6">6px (stroke)</option>
+            <option value="8">8px (stroke)</option>
+            <option value="10">10px (stroke)</option>
+            <option value="15">15px (stroke)</option>
+            <option value="20">20px (stroke)</option>
+            <option value="30">30px (stroke)</option>
+          </select>
+          
+          <div class="ui labeled input">
+            <div class="ui label">
+              Color-Hex
+            </div>
+            <input id="i-colorhex" type="text" value="ff0000">
+          </div>
+          <select class="ui dropdown" id="i-alphavalue">
+            <option value="0.2">Alpha (0.2)</option>
+            <option value="0.4">Alpha (0.4)</option>
+            <option value="0.6" selected="selected">Alpha (0.6)</option>
+            <option value="0.8">Alpha (0.8)</option>
+            <option value="1">Alpha (1.0)</option>
+          </select>
+          <select class="ui dropdown" id="i-compositeoperation">
+            <option value="source-over">source-over</option>
+            <option value="source-in">source-in</option>
+            <option value="source-out">source-out</option>
+            <option value="source-atop">source-atop</option>
+            <option value="destination-over">destination-over</option>
+            <option value="destination-in">destination-in</option>
+            <option value="copy">copy</option>
+            <option value="xor">xor</option>
+            <option value="destination-out">destination-out</option>
+            <option value="destination-atop">destination-atop</option>
+            <option value="lighter">lighter</option>
+          </select>
+        </div>
+        <div class="ui segment">
+          <!-- area for canvas-element -->
+          <div class="aspect-container">
+            <canvas id="myCanvas" width="100" height="100"></canvas >
+          </div>
+        </div>
+        <div class="ui segment">
+          <button id="b-screenshot" class="ui button">Create Screenshot</button>
+          <a id="link"></a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

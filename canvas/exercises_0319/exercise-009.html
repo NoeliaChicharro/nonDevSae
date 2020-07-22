@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--
+Copyright 2017 by Pascal Stoop
+-->
+<html>
+  <head>
+      <title>Exercise 9</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" type="text/css" href="core/lib/semantic-ui/semantic.min.css">
+
+      <style> 
+        #pixiContainer canvas {
+          border: solid 1px #cccccc;
+        }
+      </style>
+
+      <script src="core/lib/jquery-3.2.1.js"></script>
+      <script src="core/lib/semantic-ui/semantic.min.js"></script>
+      <script src="core/lib/pixi.min.js"></script>
+
+      <script>
+        function init() {
+          var app = new PIXI.Application(800, 600, {transparent: true});
+          document.body.appendChild(app.view);
+          
+          var diamant = PIXI.Sprite.fromImage("media/diamant_blue.png");
+          diamant.x = 30;
+          diamant.y = 60;
+          
+          app.stage.addChild(diamant);
+        }
+        
+        $(function() {
+          init();
+        });
+      </script>
+  </head>
+  <body>
+    <div class="ui raised padded container segment">
+      <div class="ui segments">
+        <div class="ui segment">
+          <h3>Canvas - Exercise 9 (PixiJS - Canvas 2D / WebGL)</h3>
+        </div>
+        <div class="ui segment">
+          <!-- area for canvas-element -->
+          <div id="pixiContainer">
+          </div>
+        </div>
+        <div class="ui segment">
+          
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

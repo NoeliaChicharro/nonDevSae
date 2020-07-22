@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<!--
+Copyright 2017 by Pascal Stoop
+-->
+<html>
+  <head>
+      <title>Exercise 6</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" type="text/css" href="core/lib/semantic-ui/semantic.min.css">
+
+      <style> 
+        .aspect-container {
+          position: relative;
+          padding: 0 0 50% 0;
+          height: 0;
+          overflow: hidden;
+        }
+        #myCanvas {
+          width: 100%; 
+          height: 100%; 
+          position:absolute;
+          top:0;
+          left:0;
+        }
+        #link {
+          display: none;
+        }
+      </style>
+
+      <script src="core/lib/jquery-3.2.1.js"></script>
+      <script src="core/lib/semantic-ui/semantic.min.js"></script>
+
+      <script>
+        var refCanvas = undefined;
+        var ctx = null;
+        var img = null;
+        
+        var Commands = {
+          clearall: "clearall",
+          draw: "draw"
+        };
+        
+        function init() {
+          refCanvas = document.getElementById("myCanvas");
+          if (refCanvas.getContext) {
+            ctx = refCanvas.getContext('2d', {alpha: true});
+            resizeCanvas();
+          }
+          
+          window.addEventListener("resize", function() {
+            resizeCanvas();
+          });
+          
+          $("#myCanvas").on("mousedown", function (evt) {
+            var cPos = getPositionFromEvent(evt, refCanvas);
+            console.log("x:" + cPos.x + ", y:" + cPos.y);
+            paint(Commands.draw, cPos);
+          });
+          
+          $("#b-clearall").on("click", function(evt) {
+            paint(Commands.clearall, null);
+          });
+          
+          $("#b-screenshot").on("click", function(evt) {
+            if (refCanvas.msToBlob) { //for IE
+              var blob = refCanvas.msToBlob();
+              window.navigator.msSaveBlob(blob, 'canvas.png');
+            } else {
+              //other browsers
+              var link = document.getElementById('link');
+              link.setAttribute('download', 'canvas.png');
+              link.setAttribute('href', refCanvas.toDataURL("image/png").replace("image/png", "image/octet-stream"));
+              link.click();
+            }
+            
+          });
+          
+          //init image
+          let tempImg = new Image();
+          tempImg.src = "media/zebra.jpg";
+          tempImg.onload = function(){
+            img = this;
+          };
+        }
+
+        function getPositionFromEvent(event, refCanvas) {
+          var result = { x: 0, y:0};
+
+          if (event.x != undefined && event.y != undefined) {
+            result.x = event.x;
+            result.y = event.y;
+          }
+          else {
+            result.x = event.clientX;
+            result.y = event.clientY;
+          }
+          
+          var elemInfos = refCanvas.getBoundingClientRect();
+
+          result.x -= parseInt(elemInfos.left);
+          result.y -= parseInt(elemInfos.top);
+
+          return result;
+        }
+
+        function resizeCanvas() {
+          var boxWidth = refCanvas.clientWidth;
+          var boxHeight = refCanvas.clientHeight;
+          refCanvas.width = boxWidth;
+          refCanvas.height = boxHeight;
+          paint(Commands.clearall, null);
+        }
+        
+        function paint(cmd, posData) {
+          if (ctx != null) {
+            if ((cmd == Commands.draw) && (posData != null)&& (img != null)) {
+              ctx.save();
+              ctx.globalCompositeOperation = $("#i-compositeoperation").val();
+              ctx.globalAlpha = parseFloat($("#i-alphavalue").val());
+
+              //transform/rotate
+              var rotationDegree = parseInt($("#i-rotation").val());
+              ctx.translate(posData.x, posData.y);
+              ctx.rotate(rotationDegree * (Math.PI/180));
+              
+              //draw image
+              if ($("#i-interpolation").val() == "direct") {
+                // the following is used to get the original image measurements
+                const imgWidth = img.naturalWidth;
+                const imgHeight = img.naturalHeight;
+
+                // the calculation below outputs the set width and the depending height (the image will not stretch)
+                const tempWidth = 300;
+                const tempHeight = (img.height / img.width) * tempWidth;
+
+                console.log(imgHeight, imgWidth);
+                ctx.drawImage(img, 0 - tempWidth/2, 0 - tempHeight/2, tempWidth, tempHeight);
+              }
+              else {
+                
+              }
+              ctx.restore();
+            }
+            else {
+              ctx.clearRect(0, 0, refCanvas.width, refCanvas.height);
+            }
+          }
+        }
+        
+        $(function() {
+            init();
+        });
+      </script>
+  </head>
+  <body>
+    <div class="ui raised padded container segment">
+      <div class="ui segments">
+        <div class="ui segment">
+          <h3>Canvas - Exercise 6 (Images)</h3>
+        </div>
+        <div class="ui segment">
+          <button id="b-clearall" class="ui button">Clear All</button>
+          <select class="ui dropdown" id="i-rotation">
+            <option value="0" selected="selected">0 Grad</option>
+            <option value="10">10 Grad</option>
+            <option value="30">30 Grad</option>
+            <option value="45">45 Grad</option>
+            <option value="60">60 Grad</option>
+            <option value="90">90 Grad</option>
+            <option value="150">150 Grad</option>
+            <option value="180">180 Grad</option>
+            <option value="270">270 Grad</option>
+          </select>
+          
+          <select class="ui dropdown" id="i-interpolation">
+            <option value="direct" selected="selected">direct</option>
+            <option value="steps">steps</option>
+          </select>
+          
+          <select class="ui dropdown" id="i-alphavalue">
+            <option value="0.2">Alpha (0.2)</option>
+            <option value="0.4">Alpha (0.4)</option>
+            <option value="0.6">Alpha (0.6)</option>
+            <option value="0.8">Alpha (0.8)</option>
+            <option value="1" selected="selected">Alpha (1.0)</option>
+          </select>
+          <select class="ui dropdown" id="i-compositeoperation">
+            <option value="source-over">source-over</option>
+            <option value="source-in">source-in</option>
+            <option value="source-out">source-out</option>
+            <option value="source-atop">source-atop</option>
+            <option value="destination-over">destination-over</option>
+            <option value="destination-in">destination-in</option>
+            <option value="copy">copy</option>
+            <option value="xor">xor</option>
+            <option value="destination-out">destination-out</option>
+            <option value="destination-atop">destination-atop</option>
+            <option value="lighter">lighter</option>
+          </select>
+        </div>
+        <div class="ui segment">
+          <!-- area for canvas-element -->
+          <div class="aspect-container">
+            <canvas id="myCanvas" width="100" height="100"></canvas >
+          </div>
+        </div>
+        <div class="ui segment">
+          <button id="b-screenshot" class="ui button">Create Screenshot</button>
+          <a id="link"></a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
